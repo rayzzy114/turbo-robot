@@ -1,0 +1,53 @@
+services:
+  playable-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    init: true
+    restart: unless-stopped
+    volumes:
+      - ./:/app
+      - bot_data:/app/data
+      - bot_sessions:/app/sessions
+      - bot_previews:/app/previews
+      - bot_temp:/app/temp
+      - bot_logs:/app/logs
+    command: >
+      sh -lc "uv run --with watchfiles watchfiles --filter python
+      'uv run python -m bot_py.main' /app/bot_py"
+
+  playable-admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+    depends_on:
+      - playable-bot
+    init: true
+    restart: unless-stopped
+    user: "0:0"
+    ports:
+      - "3001:3001"
+    working_dir: /app/admin
+    volumes:
+      - ./admin:/app/admin
+      - admin_node_modules:/app/admin/node_modules
+      - admin_next:/app/admin/.next
+      - bot_data:/app/data
+    command: >
+      sh -lc "if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ];
+      then npm install; fi; npm run dev -- -p 3001"
+
+volumes:
+  bot_data:
+  bot_sessions:
+  bot_previews:
+  bot_temp:
+  bot_logs:
+  admin_node_modules:
+  admin_next:
