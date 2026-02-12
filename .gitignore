@@ -2,6 +2,7 @@ temp/
 .venv/
 __pycache__/
 .pytest_cache/
+.ruff_cache/
 .cache/
 .uv/
 node_modules/
@@ -9,6 +10,9 @@ admin/node_modules/
 .next/
 admin/.next/
 venv/
+sessions/
+test-results/
+admin-*.png
 *.log
 *.tmp
 previews/

@@ -55,6 +55,46 @@ docker-compose ps
 docker-compose logs --tail=120 playable-bot playable-admin
 ```
 
+## 4.1 One-command updater script on VPS (`update.sh`)
+Create once on VPS:
+```bash
+cat > /root/turbo-robot/update.sh << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd /root/turbo-robot
+echo "[1/5] Fetch..."
+git fetch origin main
+
+LOCAL="$(git rev-parse HEAD)"
+REMOTE="$(git rev-parse origin/main)"
+
+if [ "$LOCAL" = "$REMOTE" ]; then
+  echo "[2/5] No changes in main. Nothing to deploy."
+  exit 0
+fi
+
+echo "[2/5] Updating to origin/main..."
+git reset --hard origin/main
+
+echo "[3/5] Rebuild + restart containers..."
+docker compose up -d --build
+
+echo "[4/5] Cleanup old images..."
+docker image prune -f >/dev/null || true
+
+echo "[5/5] Done."
+docker compose ps
+EOF
+
+chmod +x /root/turbo-robot/update.sh
+```
+
+Run updates anytime:
+```bash
+/root/turbo-robot/update.sh
+```
+
 ## 5. Stop
 ```bash
 docker compose down

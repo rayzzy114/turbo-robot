@@ -142,6 +142,7 @@ SUPPORTED_LANGUAGES = {"ru", "en"}
 
 TEXTS: dict[str, dict[str, str]] = {
     "ru": {
+        "start_intro": "🎮 <b>HTML5 Playable бот</b>\n\n⚡ Выберите шаблон и GEO — бот автоматически соберет готовый playable.\n🌍 Поддержка разных стран и валют.\n🛠 Нужен уникальный креатив? Можно заказать кастомный playable.",
         "menu_home": "🏠 Главное меню",
         "menu_order": "🎮 Заказать плеебл",
         "menu_profile": "👤 Профиль",
@@ -162,6 +163,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "top_up": "💰 Пополнить баланс",
     },
     "en": {
+        "start_intro": "🎮 <b>HTML5 Playable bot</b>\n\n⚡ Choose a template and GEO, and the bot will auto-generate a ready playable.\n🌍 Supports multiple countries and currencies.\n🛠 Need a unique creative? You can order a custom playable.",
         "menu_home": "🏠 Main menu",
         "menu_order": "🎮 Launch a playable",
         "menu_profile": "👤 Profile",
@@ -775,7 +777,7 @@ async def on_start(message: Message, command: CommandObject) -> None:
             if ok:
                 await DB.log_action(user.id, "referral_join", f"Ref: {ref_id}")
 
-    await message.answer("🚀", reply_markup=build_persistent_keyboard(lang))
+    await message.answer(t(lang, "start_intro"), reply_markup=build_persistent_keyboard(lang))
     await show_main_menu(message)
 
 
