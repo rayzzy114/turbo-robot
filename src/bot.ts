@@ -554,8 +554,11 @@ export function registerHandlers(bot: Bot<MyContext>) {
             }
         }
 
-        // Initialize persistent keyboard and show menu
-        await ctx.reply("🚀", { reply_markup: persistentKeyboard });
+        // Initialize persistent keyboard and explain bot purpose on first start
+        await ctx.reply(
+            "🚀 Привет! Это бот-магазин HTML5 playable-креативов.\n\n🎮 Здесь можно заказать готовый игровой рекламный креатив.\n🌍 Вы выбираете шаблон и GEO, а бот собирает файл под вашу задачу.",
+            { reply_markup: persistentKeyboard },
+        );
         await showMainMenu(ctx);
     });
 
