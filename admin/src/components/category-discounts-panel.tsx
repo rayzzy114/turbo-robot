@@ -63,23 +63,23 @@ export function CategoryDiscountsPanel({ initialRows }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       {orderedRows.map((row) => (
-        <div key={row.category} className="flex items-center gap-2">
-          <div className="min-w-32 text-sm">{row.label}</div>
+        <div key={row.category} className="grid grid-cols-[minmax(0,1fr)_4rem_auto_auto] items-center gap-1.5">
+          <div className="min-w-0 truncate text-xs">{row.label}</div>
           <Input
             type="number"
             min={0}
             max={90}
             value={row.percent}
             onChange={(e) => updatePercent(row.category, e.target.value)}
-            className="w-24"
+            className="h-7 w-16 px-2 text-xs"
             disabled={saving === row.category}
           />
-          <span className="text-xs text-muted-foreground">%</span>
+          <span className="text-[11px] text-muted-foreground">%</span>
           <Button
             type="button"
-            size="sm"
+            size="xs"
             variant="outline"
             onClick={() => saveCategory(row.category)}
             disabled={saving === row.category}
@@ -88,7 +88,7 @@ export function CategoryDiscountsPanel({ initialRows }: Props) {
           </Button>
         </div>
       ))}
-      {status ? <p className="text-xs text-muted-foreground">{status}</p> : null}
+      {status ? <p className="text-[11px] text-muted-foreground">{status}</p> : null}
     </div>
   );
 }

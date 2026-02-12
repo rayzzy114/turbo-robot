@@ -38,21 +38,21 @@ export function ResetStatsPanel() {
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-xs text-muted-foreground">
+    <div className="flex flex-col gap-2">
+      <p className="text-[11px] leading-snug text-muted-foreground">
         Clears orders, logs, referral links, wallet balances, category discounts and cached assets.
       </p>
       <Input
         value={confirm}
         onChange={(e) => setConfirm(e.target.value)}
         placeholder="Type RESET to confirm"
+        className="h-8 text-xs"
         disabled={isResetting}
       />
-      <Button type="button" variant="destructive" onClick={onReset} disabled={isResetting}>
+      <Button type="button" size="sm" variant="destructive" onClick={onReset} disabled={isResetting}>
         {isResetting ? "Resetting..." : "Reset All Stats"}
       </Button>
-      {status ? <p className="text-xs text-muted-foreground">{status}</p> : null}
+      {status ? <p className="text-[11px] text-muted-foreground">{status}</p> : null}
     </div>
   );
 }
-

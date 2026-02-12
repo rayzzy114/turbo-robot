@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { BalanceForm } from "@/components/balance-form";
 import { UserBanToggle } from "@/components/user-ban-toggle";
+import { UserDeleteButton } from "@/components/user-delete-button";
 import { AdminAutoRefresh } from "@/components/admin-auto-refresh";
 import { CategoryDiscountsPanel } from "@/components/category-discounts-panel";
 import { BroadcastPanel } from "@/components/broadcast-panel";
@@ -44,7 +45,7 @@ export default async function AdminDashboard() {
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.36),rgba(0,0,0,0.72))]" />
       </div>
 
-      <div className="admin-ambient flex flex-col gap-8 p-8 max-w-7xl mx-auto">
+      <div className="admin-ambient mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-6">
       <AdminAutoRefresh intervalMs={5000} />
       <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-zinc-950/70 p-4 backdrop-blur-md admin-card-glow">
         <div className="relative flex justify-between items-center">
@@ -167,22 +168,22 @@ export default async function AdminDashboard() {
         <span className="h-2 w-2 rounded-full bg-amber-400/80" />
         Operations
       </div>
-      <MotionSection delay={0.07} className="grid gap-4 md:grid-cols-2 lg:grid-cols-12">
-        <Card className="admin-glass-card lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Referral Funnel Metrics (Auto)</CardTitle>
+      <MotionSection delay={0.07} className="grid items-start gap-3 md:grid-cols-2 lg:grid-cols-12">
+        <Card className="admin-glass-card self-start gap-4 py-4 lg:col-span-3">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-base">Referral Funnel Metrics (Auto)</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-3">
-              <div className="rounded-md border p-3">
+          <CardContent className="pt-0">
+            <div className="grid gap-2">
+              <div className="rounded-md border p-2.5">
                 <div className="text-xs text-muted-foreground">Referral Open Events</div>
                 <div className="admin-numeric text-xl font-semibold">{stats.referral.events.referralOpen}</div>
               </div>
-              <div className="rounded-md border p-3">
+              <div className="rounded-md border p-2.5">
                 <div className="text-xs text-muted-foreground">Referral Join Events</div>
                 <div className="admin-numeric text-xl font-semibold">{stats.referral.events.referralJoin}</div>
               </div>
-              <div className="rounded-md border p-3">
+              <div className="rounded-md border p-2.5">
                 <div className="text-xs text-muted-foreground">Referral Reward Events</div>
                 <div className="admin-numeric text-xl font-semibold">{stats.referral.events.referralReward}</div>
               </div>
@@ -190,28 +191,28 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="admin-glass-card lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Category Discounts</CardTitle>
+        <Card className="admin-glass-card self-start gap-4 py-4 lg:col-span-3">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-base">Category Discounts</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <CategoryDiscountsPanel initialRows={discounts} />
           </CardContent>
         </Card>
 
-        <SpotlightCard className="!rounded-xl !border-primary/30 !bg-zinc-950 lg:col-span-4">
-          <div className="mb-3 flex items-center justify-between">
+        <SpotlightCard className="self-start !rounded-xl !border-primary/30 !bg-zinc-950 !p-4 lg:col-span-4">
+          <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-zinc-100">Retention Engine</h3>
             <Repeat className="h-4 w-4 text-zinc-300" />
           </div>
           <RetentionPanel stats={stats.retention} />
         </SpotlightCard>
 
-        <Card className="admin-glass-card lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Danger Zone</CardTitle>
+        <Card className="admin-glass-card self-start gap-4 py-4 lg:col-span-2">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-base">Danger Zone</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <ResetStatsPanel />
           </CardContent>
         </Card>
@@ -282,35 +283,41 @@ export default async function AdminDashboard() {
               <CardTitle>Latest Users</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
+              <Table className="table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Wallet</TableHead>
-                    <TableHead>Orders</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-[44%]">User</TableHead>
+                    <TableHead className="w-[16%]">Wallet</TableHead>
+                    <TableHead className="w-[10%]">Orders</TableHead>
+                    <TableHead className="w-[30%] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((user: any) => (
                     <TableRow key={user.id}>
-                      <TableCell>
+                      <TableCell className="whitespace-normal">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback>{user.firstName?.[0] || "U"}</AvatarFallback>
                           </Avatar>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">{user.firstName}</span>
-                            <span className="text-xs text-muted-foreground">@{user.username}</span>
+                          <div className="flex min-w-0 flex-col">
+                            <span className="truncate text-sm font-medium">{user.firstName || "Unknown"}</span>
+                            <span className="truncate text-xs text-muted-foreground">
+                              @{user.username || user.id}
+                            </span>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="admin-numeric text-sm">${Number(user.walletBalance ?? 0).toFixed(2)}</TableCell>
                       <TableCell>{user.paid_orders}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                      <TableCell className="whitespace-normal text-right">
+                        <div className="ml-auto flex max-w-[280px] flex-wrap justify-end gap-1">
                           <BalanceForm userId={user.id} />
                           <UserBanToggle userId={user.id} isBanned={Number(user.is_banned) === 1} />
+                          <UserDeleteButton
+                            userId={user.id}
+                            label={user.username ? `@${user.username}` : user.firstName || undefined}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

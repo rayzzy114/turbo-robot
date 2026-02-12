@@ -75,34 +75,34 @@ export function RetentionPanel({ stats }: { stats: RetentionStats }) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid gap-2 md:grid-cols-2">
+    <div className="flex flex-col gap-3">
+      <div className="grid gap-1.5 md:grid-cols-2">
         {SEGMENTS.map((item) => (
           <button
             key={item.key}
             type="button"
             onClick={() => setSegment(item.key)}
-            className={`rounded-lg border p-3 text-left transition ${
+            className={`rounded-md border p-2 text-left transition ${
               segment === item.key ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
             }`}
           >
-            <div className="text-sm font-semibold">{item.label}</div>
-            <div className="text-xs text-muted-foreground">{item.hint}</div>
-            <div className="mt-1 text-xs">Users: {stats[item.countKey]}</div>
+            <div className="text-xs font-semibold">{item.label}</div>
+            <div className="text-[11px] leading-snug text-muted-foreground">{item.hint}</div>
+            <div className="mt-0.5 text-[11px]">Users: {stats[item.countKey]}</div>
           </button>
         ))}
       </div>
 
-      <div className="rounded-lg border bg-muted/20 p-3">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">Active Segment</p>
+      <div className="rounded-md border bg-muted/20 p-2.5">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Active Segment</p>
         <p className="text-sm font-semibold">{activeSegment.label}</p>
-        <p className="text-xs text-muted-foreground">{activeSegment.hint}</p>
-        <p className="mt-1 text-xs">Reach: {count}</p>
+        <p className="text-[11px] leading-snug text-muted-foreground">{activeSegment.hint}</p>
+        <p className="mt-0.5 text-[11px]">Reach: {count}</p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {TEMPLATES.map((tpl) => (
-          <Button key={tpl.label} type="button" variant="outline" size="sm" onClick={() => setText(tpl.text)}>
+          <Button key={tpl.label} type="button" variant="outline" size="xs" onClick={() => setText(tpl.text)}>
             {tpl.label}
           </Button>
         ))}
@@ -112,20 +112,20 @@ export function RetentionPanel({ stats }: { stats: RetentionStats }) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Retention message (HTML supported)"
-        className="min-h-28 rounded-md border bg-background px-3 py-2 text-sm"
+        className="min-h-24 rounded-md border bg-background px-2.5 py-2 text-xs leading-snug"
         disabled={isSending}
       />
 
-      <div className="flex gap-2">
-        <Button type="button" variant="outline" disabled={isSending} onClick={() => void send("preview")}>
+      <div className="flex flex-wrap gap-1.5">
+        <Button type="button" size="sm" variant="outline" disabled={isSending} onClick={() => void send("preview")}>
           {isSending ? "Sending..." : "Send test to admin"}
         </Button>
-        <Button type="button" disabled={isSending || count === 0} onClick={() => void send("broadcast")}>
+        <Button type="button" size="sm" disabled={isSending || count === 0} onClick={() => void send("broadcast")}>
           {isSending ? "Sending..." : `Run campaign (${count})`}
         </Button>
       </div>
 
-      {status ? <p className="text-xs text-muted-foreground">{status}</p> : null}
+      {status ? <p className="text-[11px] text-muted-foreground">{status}</p> : null}
     </div>
   );
 }
