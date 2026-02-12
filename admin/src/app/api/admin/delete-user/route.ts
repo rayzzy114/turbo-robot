@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+function hasPrismaCode(error: unknown, code: string): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === code
+  );
+}
+
 async function ensureBannedUsersTable(): Promise<void> {
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS banned_users (
@@ -45,11 +54,15 @@ export async function POST(req: Request) {
         where: { userId },
       });
 
-      await tx.$executeRaw`DELETE FROM banned_users WHERE userId = ${userId}`;
+      // rawUserId is digits-only, so this interpolation is safe and avoids BigInt bind quirks in SQLite raw params
+      await tx.$executeRawUnsafe(`DELETE FROM banned_users WHERE userId = ${rawUserId}`);
 
-      await tx.user.delete({
+      const deletedUsers = await tx.user.deleteMany({
         where: { id: userId },
       });
+      if (deletedUsers.count === 0) {
+        return { notFound: true as const };
+      }
 
       return {
         notFound: false as const,
@@ -65,6 +78,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, result });
   } catch (error) {
+    if (hasPrismaCode(error, "P2025")) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    if (hasPrismaCode(error, "P2003")) {
+      return NextResponse.json({ error: "Cannot delete user due to related records" }, { status: 409 });
+    }
     console.error("delete-user route failed", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

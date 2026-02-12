@@ -169,11 +169,11 @@ export default async function AdminDashboard() {
         Operations
       </div>
       <MotionSection delay={0.07} className="grid items-start gap-3 md:grid-cols-2 lg:grid-cols-12">
-        <Card className="admin-glass-card self-start gap-4 py-4 lg:col-span-3">
+        <Card className="admin-glass-card self-start gap-4 py-4 lg:col-span-3 lg:h-[340px]">
           <CardHeader className="pb-1">
             <CardTitle className="text-base">Referral Funnel Metrics (Auto)</CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent className="overflow-y-auto pt-0">
             <div className="grid gap-2">
               <div className="rounded-md border p-2.5">
                 <div className="text-xs text-muted-foreground">Referral Open Events</div>
@@ -191,28 +191,30 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="admin-glass-card self-start gap-4 py-4 lg:col-span-3">
+        <Card className="admin-glass-card self-start gap-4 py-4 lg:col-span-3 lg:h-[340px]">
           <CardHeader className="pb-1">
             <CardTitle className="text-base">Category Discounts</CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent className="overflow-y-auto pt-0">
             <CategoryDiscountsPanel initialRows={discounts} />
           </CardContent>
         </Card>
 
-        <SpotlightCard className="self-start !rounded-xl !border-primary/30 !bg-zinc-950 !p-4 lg:col-span-4">
+        <SpotlightCard className="self-start !rounded-xl !border-primary/30 !bg-zinc-950 !p-4 lg:col-span-4 lg:h-[340px]">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-zinc-100">Retention Engine</h3>
             <Repeat className="h-4 w-4 text-zinc-300" />
           </div>
-          <RetentionPanel stats={stats.retention} />
+          <div className="max-h-[280px] overflow-y-auto pr-1">
+            <RetentionPanel stats={stats.retention} />
+          </div>
         </SpotlightCard>
 
-        <Card className="admin-glass-card self-start gap-4 py-4 lg:col-span-2">
+        <Card className="admin-glass-card self-start gap-4 py-4 lg:col-span-2 lg:h-[340px]">
           <CardHeader className="pb-1">
             <CardTitle className="text-base">Danger Zone</CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent className="overflow-y-auto pt-0">
             <ResetStatsPanel />
           </CardContent>
         </Card>

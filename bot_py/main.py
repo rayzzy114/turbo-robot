@@ -139,6 +139,11 @@ router = Router()
 session_store = FileSessionStore(SESSIONS_DIR)
 bot_username_cache: str | None = None
 SUPPORTED_LANGUAGES = {"ru", "en"}
+PENDING_LANGUAGE_SELECTION: set[int] = set()
+START_LANGUAGE_PROMPT = (
+    "🌐 <b>Выберите язык / Choose language</b>\n\n"
+    "Сначала выберите язык интерфейса, чтобы продолжить."
+)
 
 TEXTS: dict[str, dict[str, str]] = {
     "ru": {
@@ -369,6 +374,15 @@ def build_persistent_keyboard(lang: str) -> ReplyKeyboardMarkup:
     )
 
 
+def build_start_language_keyboard() -> InlineKeyboardMarkup:
+    return _inline_keyboard(
+        [
+            [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="start_lang_ru")],
+            [InlineKeyboardButton(text="🇬🇧 English", callback_data="start_lang_en")],
+        ]
+    )
+
+
 # Backward-compatible defaults for existing handlers not yet localized.
 MAIN_MENU_NAV = build_main_menu_nav("ru")
 WITH_BACK_TO_MENU = build_back_to_menu("ru")
@@ -407,6 +421,37 @@ class BlockBannedMiddleware(BaseMiddleware):
                 except Exception:
                     pass
                 return None
+            return None
+
+        return await handler(event, data)
+
+
+class RequireLanguageSelectionMiddleware(BaseMiddleware):
+    async def __call__(self, handler, event, data):
+        user = getattr(event, "from_user", None)
+        user_id = getattr(user, "id", None)
+        if user_id is None or int(user_id) not in PENDING_LANGUAGE_SELECTION:
+            return await handler(event, data)
+
+        if isinstance(event, Message):
+            text = (event.text or "").strip()
+            if text.startswith("/start"):
+                return await handler(event, data)
+            await event.answer(
+                START_LANGUAGE_PROMPT,
+                reply_markup=build_start_language_keyboard(),
+            )
+            return None
+
+        if isinstance(event, CallbackQuery):
+            payload = event.data or ""
+            if payload in {"start_lang_ru", "start_lang_en", "set_lang_ru", "set_lang_en"}:
+                return await handler(event, data)
+            try:
+                await event.answer("Сначала выберите язык / Choose language", show_alert=False)
+            except Exception:
+                pass
+            await _reply_from_callback(event, START_LANGUAGE_PROMPT, build_start_language_keyboard())
             return None
 
         return await handler(event, data)
@@ -759,12 +804,6 @@ async def on_start(message: Message, command: CommandObject) -> None:
     user = message.from_user
 
     await DB.upsert_user(user.id, user.username, user.first_name)
-    existing_lang = await DB.get_user_language(user.id)
-    if existing_lang == "ru":
-        preferred = "en" if (user.language_code or "").lower().startswith("en") else "ru"
-        if preferred != existing_lang:
-            await DB.set_user_language(user.id, preferred)
-    lang = await DB.get_user_language(user.id)
     await DB.log_action(user.id, "start_bot")
 
     if command.args:
@@ -777,8 +816,11 @@ async def on_start(message: Message, command: CommandObject) -> None:
             if ok:
                 await DB.log_action(user.id, "referral_join", f"Ref: {ref_id}")
 
-    await message.answer(t(lang, "start_intro"), reply_markup=build_persistent_keyboard(lang))
-    await show_main_menu(message)
+    PENDING_LANGUAGE_SELECTION.add(user.id)
+    await message.answer(
+        START_LANGUAGE_PROMPT,
+        reply_markup=build_start_language_keyboard(),
+    )
 
 
 @router.callback_query(F.data == "delete_this")
@@ -810,11 +852,35 @@ async def on_language_menu(callback: CallbackQuery) -> None:
     )
 
 
-@router.callback_query(F.data.in_({"set_lang_ru", "set_lang_en"}))
+@router.callback_query(F.data.in_({"set_lang_ru", "set_lang_en", "start_lang_ru", "start_lang_en"}))
 async def on_set_language(callback: CallbackQuery) -> None:
     await callback.answer()
-    lang = "en" if callback.data == "set_lang_en" else "ru"
-    await DB.set_user_language(callback.from_user.id, lang)
+    data = callback.data or ""
+    lang = "en" if data.endswith("_en") else "ru"
+    user_id = callback.from_user.id
+    await DB.set_user_language(user_id, lang)
+
+    pending_start = user_id in PENDING_LANGUAGE_SELECTION or data.startswith("start_lang_")
+    if pending_start:
+        PENDING_LANGUAGE_SELECTION.discard(user_id)
+        await DB.log_action(user_id, "language_selected_on_start", lang)
+
+        callback_message = _callback_message(callback)
+        await _safe_delete_message(callback_message)
+        if callback_message is not None:
+            await callback_message.answer(
+                t(lang, "start_intro"),
+                reply_markup=build_persistent_keyboard(lang),
+            )
+        else:
+            await require_bot(callback).send_message(
+                user_id,
+                t(lang, "start_intro"),
+                reply_markup=build_persistent_keyboard(lang),
+            )
+        await show_main_menu(callback)
+        return
+
     await _reply_from_callback(
         callback,
         t(lang, "language_saved_en") if lang == "en" else t(lang, "language_saved_ru"),
@@ -2187,8 +2253,11 @@ async def start() -> None:
     )
     dispatcher = Dispatcher()
     block_banned = BlockBannedMiddleware()
+    language_gate = RequireLanguageSelectionMiddleware()
     dispatcher.message.middleware(block_banned)
+    dispatcher.message.middleware(language_gate)
     dispatcher.callback_query.middleware(block_banned)
+    dispatcher.callback_query.middleware(language_gate)
     dispatcher.include_router(router)
     await dispatcher.start_polling(bot, polling_timeout=CONFIG.polling_timeout)
 
