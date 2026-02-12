@@ -128,15 +128,18 @@ class DB:
                 await conn.execute(text("ALTER TABLE users ADD COLUMN language TEXT NOT NULL DEFAULT 'ru'"))
 
     @staticmethod
-    async def upsert_user(user_id: int, username: str | None = None, first_name: str | None = None) -> None:
+    async def upsert_user(user_id: int, username: str | None = None, first_name: str | None = None) -> bool:
+        created = False
         async with SessionLocal() as session:
             user = await session.scalar(select(User).where(User.id == user_id))
             if user is None:
                 session.add(User(id=user_id, username=username, first_name=first_name, language="ru"))
+                created = True
             else:
                 user.username = username
                 user.first_name = first_name
             await session.commit()
+        return created
 
     @staticmethod
     async def get_user_language(user_id: int) -> str:

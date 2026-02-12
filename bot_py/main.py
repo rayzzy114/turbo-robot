@@ -681,7 +681,11 @@ async def get_user_lang(user_id: int) -> str:
     return await DB.get_user_language(user_id)
 
 
-async def show_main_menu(event: Message | CallbackQuery, delete_previous: bool = False) -> None:
+async def show_main_menu(
+    event: Message | CallbackQuery,
+    delete_previous: bool = False,
+    include_intro: bool = False,
+) -> None:
     user_id = event.from_user.id
     lang = await get_user_lang(user_id)
     message = event if isinstance(event, Message) else _callback_message(event)
@@ -690,7 +694,7 @@ async def show_main_menu(event: Message | CallbackQuery, delete_previous: bool =
 
     welcome_path = BOT_ASSETS_DIR / "welcomer.png"
     cached_id = await DB.get_asset(ASSETS["WELCOME"])
-    caption = ""
+    caption = t(lang, "start_intro") if include_intro else ""
 
     try:
         if isinstance(event, Message):
@@ -803,7 +807,7 @@ async def on_start(message: Message, command: CommandObject) -> None:
         return
     user = message.from_user
 
-    await DB.upsert_user(user.id, user.username, user.first_name)
+    is_new_user = await DB.upsert_user(user.id, user.username, user.first_name)
     await DB.log_action(user.id, "start_bot")
 
     if command.args:
@@ -816,11 +820,15 @@ async def on_start(message: Message, command: CommandObject) -> None:
             if ok:
                 await DB.log_action(user.id, "referral_join", f"Ref: {ref_id}")
 
-    PENDING_LANGUAGE_SELECTION.add(user.id)
-    await message.answer(
-        START_LANGUAGE_PROMPT,
-        reply_markup=build_start_language_keyboard(),
-    )
+    if is_new_user:
+        PENDING_LANGUAGE_SELECTION.add(user.id)
+        await message.answer(
+            START_LANGUAGE_PROMPT,
+            reply_markup=build_start_language_keyboard(),
+        )
+        return
+
+    await show_main_menu(message, include_intro=True)
 
 
 @router.callback_query(F.data == "delete_this")
@@ -865,20 +873,7 @@ async def on_set_language(callback: CallbackQuery) -> None:
         PENDING_LANGUAGE_SELECTION.discard(user_id)
         await DB.log_action(user_id, "language_selected_on_start", lang)
 
-        callback_message = _callback_message(callback)
-        await _safe_delete_message(callback_message)
-        if callback_message is not None:
-            await callback_message.answer(
-                t(lang, "start_intro"),
-                reply_markup=build_persistent_keyboard(lang),
-            )
-        else:
-            await require_bot(callback).send_message(
-                user_id,
-                t(lang, "start_intro"),
-                reply_markup=build_persistent_keyboard(lang),
-            )
-        await show_main_menu(callback)
+        await show_main_menu(callback, delete_previous=True, include_intro=True)
         return
 
     await _reply_from_callback(
