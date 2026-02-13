@@ -18,7 +18,6 @@ admin-*.png
 previews/
 
 # Local visual/debug artifacts
-previews/playwright_*/
 previews/*.png
 previews/*_log.txt
 previews/*dumpdom*
@@ -30,3 +29,11 @@ previews/PREVIEW_runtime_injection_*.html
 previews/PREVIEW_smoke_*.html
 previews/PREVIEW_verify_*.html
 previews/PREVIEW_check_visual_*.html
+
+# Template build artifacts
+templates/*/dist/
+templates/*/builds/
+templates/gate_of_olympus/release/
+templates/gate_of_olympus/dev/assets/.release-cache/
+templates/gate_of_olympus/*.zip
+templates/gate_of_olympus/dev/*.zip
