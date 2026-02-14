@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isPlayableCategory, normalizeDiscountPercent } from "@/lib/playable-categories";
+import { requireAdminAuth } from "@/lib/admin-auth";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const authError = requireAdminAuth(req);
+  if (authError) return authError;
+
   const rows = (await prisma.$queryRaw`SELECT category, percent FROM category_discounts`) as Array<{
     category: string;
     percent: number;
@@ -16,6 +20,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const authError = requireAdminAuth(req);
+  if (authError) return authError;
+
   try {
     const payload = await req.json();
     const category = String(payload?.category ?? "").trim();

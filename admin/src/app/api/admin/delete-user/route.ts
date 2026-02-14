@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminAuth } from "@/lib/admin-auth";
+import type { Prisma } from "@prisma/client";
 
 function hasPrismaCode(error: unknown, code: string): boolean {
   return (
@@ -21,6 +23,9 @@ async function ensureBannedUsersTable(): Promise<void> {
 }
 
 export async function POST(req: Request) {
+  const authError = requireAdminAuth(req);
+  if (authError) return authError;
+
   try {
     await ensureBannedUsersTable();
     const payload = await req.json();
@@ -32,7 +37,7 @@ export async function POST(req: Request) {
 
     const userId = BigInt(rawUserId);
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const userExists = await tx.user.findUnique({
         where: { id: userId },
         select: { id: true },

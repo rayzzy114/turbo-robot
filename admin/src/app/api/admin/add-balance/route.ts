@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { requireAdminAuth } from "@/lib/admin-auth";
+import type { Prisma } from "@prisma/client";
 
 function hasPrismaCode(error: unknown, code: string): boolean {
   return (
@@ -11,6 +13,9 @@ function hasPrismaCode(error: unknown, code: string): boolean {
 }
 
 export async function POST(req: Request) {
+  const authError = requireAdminAuth(req);
+  if (authError) return authError;
+
   try {
     const { userId, amount, operation } = await req.json();
     const rawUserId = String(userId ?? "").trim();
@@ -27,7 +32,7 @@ export async function POST(req: Request) {
       operation === "subtract" ? "subtract" : "add";
 
     const targetId = BigInt(rawUserId);
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const user = await tx.user.findUnique({
         where: { id: targetId },
         select: { walletBalance: true },

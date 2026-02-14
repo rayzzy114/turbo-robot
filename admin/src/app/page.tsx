@@ -46,7 +46,7 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="admin-ambient mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-6">
-      <AdminAutoRefresh intervalMs={5000} />
+      <AdminAutoRefresh intervalMs={30000} />
       <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-zinc-950/70 p-4 backdrop-blur-md admin-card-glow">
         <div className="relative flex justify-between items-center">
           <div>

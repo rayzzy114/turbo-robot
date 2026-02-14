@@ -1,8 +1,9 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { getServerEnv } from "@/lib/server-env";
 
 const REALM = 'Basic realm="Admin Panel"';
 
-function challenge() {
+function challenge(): NextResponse {
   return new NextResponse("Authentication required", {
     status: 401,
     headers: { "WWW-Authenticate": REALM },
@@ -12,7 +13,8 @@ function challenge() {
 function parseBasicAuth(authHeader: string | null): { user: string; pass: string } | null {
   if (!authHeader || !authHeader.startsWith("Basic ")) return null;
   try {
-    const decoded = atob(authHeader.slice(6));
+    const encoded = authHeader.slice(6).trim();
+    const decoded = Buffer.from(encoded, "base64").toString("utf8");
     const sep = decoded.indexOf(":");
     if (sep < 0) return null;
     return {
@@ -24,9 +26,9 @@ function parseBasicAuth(authHeader: string | null): { user: string; pass: string
   }
 }
 
-export function middleware(request: NextRequest) {
-  const adminUser = process.env.ADMIN_USER;
-  const adminPass = process.env.ADMIN_PASS;
+export function requireAdminAuth(request: Request): NextResponse | null {
+  const adminUser = getServerEnv("ADMIN_USER");
+  const adminPass = getServerEnv("ADMIN_PASS");
 
   if (!adminUser || !adminPass) {
     return NextResponse.json(
@@ -40,9 +42,5 @@ export function middleware(request: NextRequest) {
     return challenge();
   }
 
-  return NextResponse.next();
+  return null;
 }
-
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-};

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminAuth } from "@/lib/admin-auth";
 
 async function ensureBannedUsersTable(): Promise<void> {
   await prisma.$executeRawUnsafe(`
@@ -12,6 +13,9 @@ async function ensureBannedUsersTable(): Promise<void> {
 }
 
 export async function POST(req: Request) {
+  const authError = requireAdminAuth(req);
+  if (authError) return authError;
+
   try {
     await ensureBannedUsersTable();
     const payload = await req.json();

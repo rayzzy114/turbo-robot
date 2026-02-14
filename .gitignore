@@ -1,4 +1,5 @@
 temp/
+.env
 .venv/
 __pycache__/
 .pytest_cache/
@@ -37,3 +38,4 @@ templates/gate_of_olympus/release/
 templates/gate_of_olympus/dev/assets/.release-cache/
 templates/gate_of_olympus/*.zip
 templates/gate_of_olympus/dev/*.zip
+library/

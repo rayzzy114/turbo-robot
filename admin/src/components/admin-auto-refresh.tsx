@@ -7,12 +7,13 @@ type AdminAutoRefreshProps = {
   intervalMs?: number;
 };
 
-export function AdminAutoRefresh({ intervalMs = 5000 }: AdminAutoRefreshProps) {
+export function AdminAutoRefresh({ intervalMs = 30000 }: AdminAutoRefreshProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
 
   useEffect(() => {
     const id = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
       startTransition(() => {
         router.refresh();
       });

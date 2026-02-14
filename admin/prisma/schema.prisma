@@ -12,8 +12,8 @@ model User {
   username        String?
   firstName       String?
   walletBalance   Float    @default(0)
-  subscriptionEnd String   @default("") // Legacy DB may store unix-ms strings
-  createdAt       String   @default("")
+  subscriptionEnd DateTime @default(now())
+  createdAt       DateTime @default(now())
 
   // Referrals logic
   referrerId      BigInt?  // Who invited this user
@@ -23,13 +23,15 @@ model User {
   orders          Order[]
   logs            Log[]
 
+  @@index([createdAt])
+  @@index([referrerId])
   @@map("users")
 }
 
 model AssetCache {
   key       String   @id
   fileId    String
-  updatedAt String   @default("")
+  updatedAt DateTime @updatedAt
   
   @@map("asset_cache")
 }
@@ -47,8 +49,12 @@ model Order {
   amount          Int      @default(0)
   discountApplied Int      @default(0)
   
-  createdAt       String   @default("")
+  createdAt       DateTime @default(now())
 
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId, status])
   @@map("orders")
 }
 
@@ -59,7 +65,11 @@ model Log {
   
   action    String
   details   String?
-  createdAt String   @default("")
+  createdAt DateTime @default(now())
 
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([userId, createdAt])
   @@map("logs")
 }

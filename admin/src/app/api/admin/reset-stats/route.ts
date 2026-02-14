@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminAuth } from "@/lib/admin-auth";
 
 async function safeExecute(sql: string): Promise<void> {
   try {
@@ -10,6 +11,9 @@ async function safeExecute(sql: string): Promise<void> {
 }
 
 export async function POST(req: Request) {
+  const authError = requireAdminAuth(req);
+  if (authError) return authError;
+
   try {
     const payload = await req.json().catch(() => ({}));
     const confirm = String(payload?.confirm ?? "").trim().toUpperCase();
@@ -39,4 +43,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

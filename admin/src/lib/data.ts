@@ -17,6 +17,16 @@ async function ensureBannedUsersTable(): Promise<void> {
   `);
 }
 
+function toEpochMsExpr(columnRef: string): string {
+  return `
+    CASE
+      WHEN typeof(${columnRef}) = 'integer' THEN CAST(${columnRef} AS INTEGER)
+      WHEN trim(CAST(${columnRef} AS TEXT)) GLOB '[0-9]*' THEN CAST(${columnRef} AS INTEGER)
+      ELSE CAST(strftime('%s', ${columnRef}) AS INTEGER) * 1000
+    END
+  `;
+}
+
 export async function getAdminStats() {
   const usersCount = await prisma.user.count();
   const revenueAgg = await prisma.order.aggregate({
@@ -96,6 +106,9 @@ export async function getAdminStats() {
   const inactive3dThreshold = nowMs - 3 * dayMs;
   const inactive7dThreshold = nowMs - 7 * dayMs;
   const noPaid24hThreshold = nowMs - dayMs;
+  const userCreatedAtMs = toEpochMsExpr("u.createdAt");
+  const logCreatedAtMs = toEpochMsExpr("createdAt");
+  const orderCreatedAtMs = toEpochMsExpr("createdAt");
 
   const usersNoPaid = await prisma.$queryRaw<Array<{ count: number }>>`
     SELECT COUNT(1) as count
@@ -106,50 +119,50 @@ export async function getAdminStats() {
     )
   `;
 
-  const usersNoPaid24h = await prisma.$queryRaw<Array<{ count: number }>>`
+  const usersNoPaid24h = await prisma.$queryRawUnsafe<Array<{ count: number }>>(`
     SELECT COUNT(1) as count
     FROM users u
-    WHERE CAST(u.createdAt AS INTEGER) <= ${noPaid24hThreshold}
+    WHERE ${userCreatedAtMs} <= ${noPaid24hThreshold}
       AND NOT EXISTS (
         SELECT 1 FROM orders o
         WHERE o.userId = u.id AND o.status LIKE 'paid%'
       )
-  `;
+  `);
 
-  const inactive3d = await prisma.$queryRaw<Array<{ count: number }>>`
+  const inactive3d = await prisma.$queryRawUnsafe<Array<{ count: number }>>(`
     SELECT COUNT(1) as count
     FROM users u
     LEFT JOIN (
-      SELECT userId, MAX(CAST(createdAt AS INTEGER)) AS lastActivity
+      SELECT userId, MAX(${logCreatedAtMs}) AS lastActivity
       FROM logs
       GROUP BY userId
     ) l ON l.userId = u.id
-    WHERE COALESCE(l.lastActivity, CAST(u.createdAt AS INTEGER)) <= ${inactive3dThreshold}
-  `;
+    WHERE COALESCE(l.lastActivity, ${userCreatedAtMs}) <= ${inactive3dThreshold}
+  `);
 
-  const inactive7d = await prisma.$queryRaw<Array<{ count: number }>>`
+  const inactive7d = await prisma.$queryRawUnsafe<Array<{ count: number }>>(`
     SELECT COUNT(1) as count
     FROM users u
     LEFT JOIN (
-      SELECT userId, MAX(CAST(createdAt AS INTEGER)) AS lastActivity
+      SELECT userId, MAX(${logCreatedAtMs}) AS lastActivity
       FROM logs
       GROUP BY userId
     ) l ON l.userId = u.id
-    WHERE COALESCE(l.lastActivity, CAST(u.createdAt AS INTEGER)) <= ${inactive7dThreshold}
-  `;
+    WHERE COALESCE(l.lastActivity, ${userCreatedAtMs}) <= ${inactive7dThreshold}
+  `);
 
-  const onePaidNoRepeat7d = await prisma.$queryRaw<Array<{ count: number }>>`
+  const onePaidNoRepeat7d = await prisma.$queryRawUnsafe<Array<{ count: number }>>(`
     SELECT COUNT(1) as count
     FROM users u
     JOIN (
-      SELECT userId, COUNT(1) AS paidCount, MAX(CAST(createdAt AS INTEGER)) AS lastPaidAt
+      SELECT userId, COUNT(1) AS paidCount, MAX(${orderCreatedAtMs}) AS lastPaidAt
       FROM orders
       WHERE status LIKE 'paid%'
       GROUP BY userId
     ) p ON p.userId = u.id
     WHERE p.paidCount = 1
       AND p.lastPaidAt <= ${inactive7dThreshold}
-  `;
+  `);
 
   const paidNoReferrals = await prisma.$queryRaw<Array<{ count: number }>>`
     SELECT COUNT(1) as count

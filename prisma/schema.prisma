@@ -24,6 +24,8 @@ model User {
   orders          Order[]
   logs            Log[]
 
+  @@index([createdAt])
+  @@index([referrerId])
   @@map("users")
 }
 
@@ -58,6 +60,10 @@ model Order {
   
   createdAt       DateTime @default(now())
 
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId, status])
   @@map("orders")
 }
 
@@ -70,5 +76,9 @@ model Log {
   details   String?
   createdAt DateTime @default(now())
 
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([userId, createdAt])
   @@map("logs")
 }
