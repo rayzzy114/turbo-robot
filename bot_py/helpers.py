@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -81,11 +82,15 @@ def build_profile_message(user_id: int, orders_paid: int, wallet_balance: float,
     )
 
 
-def get_library_path(game_id: str, geo_id: str, is_watermarked: bool) -> str | None:
+async def async_exists(path: Path) -> bool:
+    return await asyncio.to_thread(path.exists)
+
+
+async def get_library_path(game_id: str, geo_id: str, is_watermarked: bool) -> str | None:
     root = Path.cwd()
     filename = f"{geo_id}_{'preview' if is_watermarked else 'final'}.html"
     full_path = root / "library" / game_id / filename
-    if full_path.exists():
+    if await async_exists(full_path):
         return str(full_path)
     return None
 
