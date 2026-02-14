@@ -38,6 +38,7 @@ from .helpers import (
     build_profile_message,
     calc_price,
     get_discount,
+    async_exists,
     get_library_path,
     parse_pay_callback,
 )
@@ -493,10 +494,10 @@ async def edit_or_reply(callback: CallbackQuery, text: str, keyboard: InlineKeyb
     await _reply_from_callback(callback, localized_text, localized_keyboard)
 
 
-def find_existing_preview_path(game_key: str) -> Path | None:
+async def find_existing_preview_path(game_key: str) -> Path | None:
     candidates = GAME_PREVIEW_PHOTOS.get(game_key, [])
     for candidate in candidates:
-        if candidate.exists():
+        if await async_exists(candidate):
             return candidate
     return None
 
@@ -713,7 +714,7 @@ async def show_main_menu(
             await target.answer_photo(cached_id, caption=caption, reply_markup=build_main_menu_keyboard(lang))
             return
 
-        if welcome_path.exists():
+        if await async_exists(welcome_path):
             sent = await target.answer_photo(FSInputFile(welcome_path), caption=caption, reply_markup=build_main_menu_keyboard(lang))
             if sent.photo:
                 await DB.set_asset(ASSETS["WELCOME"], sent.photo[-1].file_id)
@@ -746,7 +747,7 @@ async def show_product_photo_card(callback: CallbackQuery, game: OrderableGame) 
     caption = localize_text(caption, lang)
     keyboard = localize_inline_keyboard(keyboard, lang) or keyboard
     cache_key = f"product_preview_v2_{game.key}"
-    preview_path = find_existing_preview_path(game.key)
+    preview_path = await find_existing_preview_path(game.key)
 
     message = _callback_message(callback)
     await _safe_delete_message(message)
@@ -760,7 +761,7 @@ async def show_product_photo_card(callback: CallbackQuery, game: OrderableGame) 
                 await require_bot(callback).send_photo(callback.from_user.id, cached_id, caption=caption, reply_markup=keyboard)
             return
 
-        if preview_path and preview_path.exists():
+        if preview_path and await async_exists(preview_path):
             if message is not None:
                 sent = await message.answer_photo(FSInputFile(preview_path), caption=caption, reply_markup=keyboard)
             else:
@@ -980,7 +981,7 @@ async def on_game_railroad(callback: CallbackQuery) -> None:
     await DB.log_action(callback.from_user.id, "view_product", "railroad")
 
     preview_cache_key = f"product_preview_v2_{GAMES['RAILROAD']['GAME_KEY']}"
-    preview_path = find_existing_preview_path(GAMES["RAILROAD"]["GAME_KEY"])
+    preview_path = await find_existing_preview_path(GAMES["RAILROAD"]["GAME_KEY"])
     pricing = await get_effective_discount_for_game(callback.from_user.id, GAMES["RAILROAD"]["GAME_KEY"])
     single_price = calc_price(CONFIG.prices.single, pricing["discount"])
     caption = (
@@ -1010,7 +1011,7 @@ async def on_game_railroad(callback: CallbackQuery) -> None:
             else:
                 await require_bot(callback).send_photo(callback.from_user.id, cached_id, caption=caption, reply_markup=keyboard)
             return
-        if preview_path and preview_path.exists():
+        if preview_path and await async_exists(preview_path):
             if message is not None:
                 sent = await message.answer_photo(FSInputFile(preview_path), caption=caption, reply_markup=keyboard)
             else:
@@ -1248,15 +1249,13 @@ async def on_gen_preview(callback: CallbackQuery) -> None:
 async def build_final_order_path(order_id: str, order: dict[str, Any]) -> str | None:
     config = order.get("config", {})
     click_url = config.get("clickUrl") if isinstance(config, dict) else None
-    lib_path = (
-        get_library_path(
+    lib_path = None
+    if can_use_library_artifact(click_url):
+        lib_path = await get_library_path(
             str(order.get("gameType", "")),
             str(config.get("geoId", "en_usd")),
             False,
         )
-        if can_use_library_artifact(click_url)
-        else None
-    )
 
     if lib_path:
         logging.info("[Library] Delivering pre-built final: %s", lib_path)
@@ -1724,7 +1723,7 @@ async def on_profile(callback: CallbackQuery) -> None:
             else:
                 await require_bot(callback).send_photo(callback.from_user.id, cached_id, caption=msg_text, reply_markup=keyboard)
             return
-        if profile_path.exists():
+        if await async_exists(profile_path):
             if message is not None:
                 sent = await message.answer_photo(FSInputFile(profile_path), caption=msg_text, reply_markup=keyboard)
             else:
