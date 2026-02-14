@@ -54,3 +54,38 @@ ASSETS: Final = {
     "PROFILE": "profile_img",
 }
 
+
+class Callback:
+    MAIN_MENU = "main_menu"
+    ORDER = "order"
+    PROFILE = "profile"
+    REF_SYSTEM = "ref_system"
+    LANGUAGE_MENU = "language_menu"
+    DELETE_THIS = "delete_this"
+    SKIP_STARTING_BALANCE = "skip_starting_balance"
+    GEN_PREVIEW = "gen_preview"
+    TOP_UP_BALANCE = "top_up_balance"
+    I_PAID = "i_paid"
+    GEO_CUSTOM = "geo_custom"
+
+    # Language
+    SET_LANG_RU = "set_lang_ru"
+    SET_LANG_EN = "set_lang_en"
+    START_LANG_RU = "start_lang_ru"
+    START_LANG_EN = "start_lang_en"
+
+    # Prefixes
+    BUY_CHECK_PREFIX = "buy_check_"
+    GEO_PREFIX = "geo_"
+    PAYMENT_CANCEL_PREFIX = "payment_cancel_"
+    MANUAL_PAY_MENU_PREFIX = "manual_pay_menu_"
+    MANUAL_PAY_PREFIX = "manual_pay_"
+    MANUAL_PAID_PREFIX = "manual_paid_"
+    CRYPTO_CHECK_PREFIX = "crypto_check_"
+    PAY_PREFIX = "pay_"
+    ADMIN_MANUAL_PREFIX = "admin_manual_"
+
+
+class PaymentType:
+    SINGLE = "single"
+    SUB = "sub"

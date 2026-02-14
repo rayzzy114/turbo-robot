@@ -3,6 +3,8 @@
 from pathlib import Path
 from typing import Any
 
+from .constants import PaymentType
+
 DEFAULT_STARTING_BALANCE = 1000
 DEFAULT_CURRENCY = "$"
 MAX_CURRENCY_LENGTH = 5
@@ -95,7 +97,7 @@ def parse_pay_callback(data: str) -> dict[str, str] | None:
     if len(parts) < 3:
         return None
     pay_type = parts[1]
-    if pay_type not in {"single", "sub"}:
+    if pay_type not in {PaymentType.SINGLE, PaymentType.SUB}:
         return None
     order_id = "_".join(parts[2:])
     if not order_id:

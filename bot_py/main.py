@@ -28,12 +28,10 @@ from aiogram.types import (
 
 from .builder_bridge import cleanup_temp, generate_playable
 from .config import CONFIG
-from .constants import ASSETS, CATEGORIES, GAMES, GEOS
+from .constants import ASSETS, CATEGORIES, GAMES, GEOS, Callback, PaymentType
 from .crypto_pay import CreateInvoiceParams, create_crypto_pay_invoice, get_crypto_pay_invoice, is_crypto_pay_enabled
 from .db import DB, DBError
 from .helpers import (
-    DEFAULT_CURRENCY,
-    DEFAULT_STARTING_BALANCE,
     build_order_summary,
     build_profile_message,
     calc_price,
@@ -350,21 +348,21 @@ async def answer_user(
 def build_main_menu_keyboard(lang: str) -> InlineKeyboardMarkup:
     return _inline_keyboard(
         [
-            [InlineKeyboardButton(text=t(lang, "menu_order"), callback_data="order")],
-            [InlineKeyboardButton(text=t(lang, "menu_profile"), callback_data="profile")],
-            [InlineKeyboardButton(text=t(lang, "menu_ref"), callback_data="ref_system")],
-            [InlineKeyboardButton(text=t(lang, "menu_lang"), callback_data="language_menu")],
+            [InlineKeyboardButton(text=t(lang, "menu_order"), callback_data=Callback.ORDER)],
+            [InlineKeyboardButton(text=t(lang, "menu_profile"), callback_data=Callback.PROFILE)],
+            [InlineKeyboardButton(text=t(lang, "menu_ref"), callback_data=Callback.REF_SYSTEM)],
+            [InlineKeyboardButton(text=t(lang, "menu_lang"), callback_data=Callback.LANGUAGE_MENU)],
             [InlineKeyboardButton(text=t(lang, "menu_support"), url="https://t.me/rawberrry")],
         ]
     )
 
 
 def build_main_menu_nav(lang: str) -> InlineKeyboardMarkup:
-    return _inline_keyboard([[InlineKeyboardButton(text=t(lang, "menu_home"), callback_data="main_menu")]])
+    return _inline_keyboard([[InlineKeyboardButton(text=t(lang, "menu_home"), callback_data=Callback.MAIN_MENU)]])
 
 
 def build_back_to_menu(lang: str) -> InlineKeyboardMarkup:
-    return _inline_keyboard([[InlineKeyboardButton(text=t(lang, "back"), callback_data="main_menu")]])
+    return _inline_keyboard([[InlineKeyboardButton(text=t(lang, "back"), callback_data=Callback.MAIN_MENU)]])
 
 
 def build_persistent_keyboard(lang: str) -> ReplyKeyboardMarkup:
@@ -377,8 +375,8 @@ def build_persistent_keyboard(lang: str) -> ReplyKeyboardMarkup:
 def build_start_language_keyboard() -> InlineKeyboardMarkup:
     return _inline_keyboard(
         [
-            [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="start_lang_ru")],
-            [InlineKeyboardButton(text="🇬🇧 English", callback_data="start_lang_en")],
+            [InlineKeyboardButton(text="🇷🇺 Русский", callback_data=Callback.START_LANG_RU)],
+            [InlineKeyboardButton(text="🇬🇧 English", callback_data=Callback.START_LANG_EN)],
         ]
     )
 
@@ -445,7 +443,7 @@ class RequireLanguageSelectionMiddleware(BaseMiddleware):
 
         if isinstance(event, CallbackQuery):
             payload = event.data or ""
-            if payload in {"start_lang_ru", "start_lang_en", "set_lang_ru", "set_lang_en"}:
+            if payload in {Callback.START_LANG_RU, Callback.START_LANG_EN, Callback.SET_LANG_RU, Callback.SET_LANG_EN}:
                 return await handler(event, data)
             try:
                 await event.answer("Сначала выберите язык / Choose language", show_alert=False)
@@ -567,9 +565,9 @@ def build_crypto_invoice_keyboard(order_id: str, pay_url: str) -> InlineKeyboard
     return _inline_keyboard(
         [
             [InlineKeyboardButton(text="Оплатить в Crypto Bot", url=pay_url)],
-            [InlineKeyboardButton(text="Проверить оплату", callback_data=f"crypto_check_{order_id}")],
-            [InlineKeyboardButton(text="Отменить оплату", callback_data=f"payment_cancel_{order_id}")],
-            [InlineKeyboardButton(text="Главное меню", callback_data="main_menu")],
+            [InlineKeyboardButton(text="Проверить оплату", callback_data=f"{Callback.CRYPTO_CHECK_PREFIX}{order_id}")],
+            [InlineKeyboardButton(text="Отменить оплату", callback_data=f"{Callback.PAYMENT_CANCEL_PREFIX}{order_id}")],
+            [InlineKeyboardButton(text="Главное меню", callback_data=Callback.MAIN_MENU)],
         ]
     )
 
@@ -577,8 +575,8 @@ def build_crypto_invoice_keyboard(order_id: str, pay_url: str) -> InlineKeyboard
 def build_cancel_payment_keyboard(order_id: str) -> InlineKeyboardMarkup:
     return _inline_keyboard(
         [
-            [InlineKeyboardButton(text="Отменить оплату", callback_data=f"payment_cancel_{order_id}")],
-            [InlineKeyboardButton(text="Главное меню", callback_data="main_menu")],
+            [InlineKeyboardButton(text="Отменить оплату", callback_data=f"{Callback.PAYMENT_CANCEL_PREFIX}{order_id}")],
+            [InlineKeyboardButton(text="Главное меню", callback_data=Callback.MAIN_MENU)],
         ]
     )
 
@@ -586,8 +584,8 @@ def build_cancel_payment_keyboard(order_id: str) -> InlineKeyboardMarkup:
 def build_cancelled_order_keyboard() -> InlineKeyboardMarkup:
     return _inline_keyboard(
         [
-            [InlineKeyboardButton(text="🎮 Новый заказ", callback_data="order")],
-            [InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu")],
+            [InlineKeyboardButton(text="🎮 Новый заказ", callback_data=Callback.ORDER)],
+            [InlineKeyboardButton(text="🏠 Главное меню", callback_data=Callback.MAIN_MENU)],
         ]
     )
 
@@ -596,14 +594,14 @@ def build_geo_keyboard() -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     current_row: list[InlineKeyboardButton] = []
     for geo in GEOS:
-        current_row.append(InlineKeyboardButton(text=geo["name"], callback_data=f"geo_{geo['id']}"))
+        current_row.append(InlineKeyboardButton(text=geo["name"], callback_data=f"{Callback.GEO_PREFIX}{geo['id']}"))
         if len(current_row) == 2:
             rows.append(current_row)
             current_row = []
     if current_row:
         rows.append(current_row)
-    rows.append([InlineKeyboardButton(text="📝 Заказать своё GEO", callback_data="geo_custom")])
-    rows.append([InlineKeyboardButton(text="Отмена", callback_data="main_menu")])
+    rows.append([InlineKeyboardButton(text="📝 Заказать своё GEO", callback_data=Callback.GEO_CUSTOM)])
+    rows.append([InlineKeyboardButton(text="Отмена", callback_data=Callback.MAIN_MENU)])
     return _inline_keyboard(rows)
 
 async def get_session(user_id: int) -> dict[str, Any]:
@@ -664,7 +662,7 @@ async def get_effective_discount_for_game(user_id: int, game_key: str | None) ->
 async def get_discounted_amount(user_id: int, payment_type: str, game_key: str | None = None) -> dict[str, int]:
     pricing = await get_effective_discount_for_game(user_id, game_key)
     discount = int(pricing["discount"])
-    amount = calc_price(CONFIG.prices.sub if payment_type == "sub" else CONFIG.prices.single, discount)
+    amount = calc_price(CONFIG.prices.sub if payment_type == PaymentType.SUB else CONFIG.prices.single, discount)
     return {"amount": amount, "discount": discount}
 
 
@@ -831,19 +829,19 @@ async def on_start(message: Message, command: CommandObject) -> None:
     await show_main_menu(message, include_intro=True)
 
 
-@router.callback_query(F.data == "delete_this")
+@router.callback_query(F.data == Callback.DELETE_THIS)
 async def on_delete_this(callback: CallbackQuery) -> None:
     await callback.answer()
     await _safe_delete_message(_callback_message(callback))
 
 
-@router.callback_query(F.data == "main_menu")
+@router.callback_query(F.data == Callback.MAIN_MENU)
 async def on_main_menu(callback: CallbackQuery) -> None:
     await callback.answer()
     await show_main_menu(callback, delete_previous=True)
 
 
-@router.callback_query(F.data == "language_menu")
+@router.callback_query(F.data == Callback.LANGUAGE_MENU)
 async def on_language_menu(callback: CallbackQuery) -> None:
     await callback.answer()
     lang = await get_user_lang(callback.from_user.id)
@@ -852,15 +850,15 @@ async def on_language_menu(callback: CallbackQuery) -> None:
         t(lang, "choose_language"),
         _inline_keyboard(
             [
-                [InlineKeyboardButton(text="Русский", callback_data="set_lang_ru")],
-                [InlineKeyboardButton(text="English", callback_data="set_lang_en")],
-                [InlineKeyboardButton(text=t(lang, "back"), callback_data="main_menu")],
+                [InlineKeyboardButton(text="Русский", callback_data=Callback.SET_LANG_RU)],
+                [InlineKeyboardButton(text="English", callback_data=Callback.SET_LANG_EN)],
+                [InlineKeyboardButton(text=t(lang, "back"), callback_data=Callback.MAIN_MENU)],
             ]
         ),
     )
 
 
-@router.callback_query(F.data.in_({"set_lang_ru", "set_lang_en", "start_lang_ru", "start_lang_en"}))
+@router.callback_query(F.data.in_({Callback.SET_LANG_RU, Callback.SET_LANG_EN, Callback.START_LANG_RU, Callback.START_LANG_EN}))
 async def on_set_language(callback: CallbackQuery) -> None:
     await callback.answer()
     data = callback.data or ""
@@ -889,7 +887,7 @@ async def on_keyboard_main_menu(message: Message) -> None:
     await show_main_menu(message)
 
 
-@router.callback_query(F.data == "order")
+@router.callback_query(F.data == Callback.ORDER)
 async def on_order(callback: CallbackQuery) -> None:
     await callback.answer()
     await DB.log_action(callback.from_user.id, "start_order")
@@ -907,7 +905,7 @@ async def on_order(callback: CallbackQuery) -> None:
                     InlineKeyboardButton(text="🎰 Слоты", callback_data=CATEGORIES["SLOTS"]),
                     InlineKeyboardButton(text="🧩 Метчинг", callback_data=CATEGORIES["MATCHING"]),
                 ],
-                [InlineKeyboardButton(text=t(lang, "back"), callback_data="main_menu")],
+                [InlineKeyboardButton(text=t(lang, "back"), callback_data=Callback.MAIN_MENU)],
             ]
         ),
     )
@@ -922,7 +920,7 @@ async def on_cat_chicken(callback: CallbackQuery) -> None:
         _inline_keyboard(
             [
                 [InlineKeyboardButton(text="🚂 Chicken Railroad", callback_data=GAMES["RAILROAD"]["ID"])],
-                [InlineKeyboardButton(text="🔙 Назад", callback_data="order")],
+                [InlineKeyboardButton(text="🔙 Назад", callback_data=Callback.ORDER)],
             ]
         ),
     )
@@ -937,7 +935,7 @@ async def on_cat_plinko(callback: CallbackQuery) -> None:
         _inline_keyboard(
             [
                 [InlineKeyboardButton(text="🎱 Classic Plinko", callback_data=GAMES["PLINKO"]["ID"])],
-                [InlineKeyboardButton(text="🔙 Назад", callback_data="order")],
+                [InlineKeyboardButton(text="🔙 Назад", callback_data=Callback.ORDER)],
             ]
         ),
     )
@@ -952,7 +950,7 @@ async def on_cat_slots(callback: CallbackQuery) -> None:
         _inline_keyboard(
             [
                 [InlineKeyboardButton(text="⚡ Gates of Olympus", callback_data=GAMES["OLYMPUS"]["ID"])],
-                [InlineKeyboardButton(text="🔙 Назад", callback_data="order")],
+                [InlineKeyboardButton(text="🔙 Назад", callback_data=Callback.ORDER)],
             ]
         ),
     )
@@ -968,7 +966,7 @@ async def on_cat_matching(callback: CallbackQuery) -> None:
             [
                 [InlineKeyboardButton(text="🤏 Перетаска", callback_data=GAMES["DRAG"]["ID"])],
                 [InlineKeyboardButton(text="💎 3 в ряд", callback_data=GAMES["MATCH3"]["ID"])],
-                [InlineKeyboardButton(text="🔙 Назад", callback_data="order")],
+                [InlineKeyboardButton(text="🔙 Назад", callback_data=Callback.ORDER)],
             ]
         ),
     )
@@ -992,7 +990,7 @@ async def on_game_railroad(callback: CallbackQuery) -> None:
     keyboard = _inline_keyboard(
         [
             [InlineKeyboardButton(text="👀 Смотреть демо в канале", url=get_channel_post_for_game(GAMES["RAILROAD"]["GAME_KEY"]) or "https://t.me/rwbrr")],
-            [InlineKeyboardButton(text=f"💳 Купить (${single_price})", callback_data="buy_check_railroad")],
+            [InlineKeyboardButton(text=f"💳 Купить (${single_price})", callback_data=f"{Callback.BUY_CHECK_PREFIX}railroad")],
             [InlineKeyboardButton(text="🔙 Назад", callback_data=CATEGORIES["CHICKEN"])],
         ]
     )
@@ -1052,7 +1050,7 @@ async def on_game_plinko(callback: CallbackQuery) -> None:
     )
 
 
-@router.callback_query(F.data.regexp(r"^buy_check_"))
+@router.callback_query(F.data.regexp(rf"^{Callback.BUY_CHECK_PREFIX}"))
 async def on_buy_check(callback: CallbackQuery) -> None:
     await callback.answer()
     game = ORDERABLE_BY_BUY_CALLBACK.get(callback.data or "")
@@ -1069,7 +1067,7 @@ async def on_buy_check(callback: CallbackQuery) -> None:
             callback,
             f"Недостаточно средств на балансе.\nВаш баланс: ${pricing['stats'].wallet_balance}\n"
             f"Требуется: ${min_price}\n\nПожалуйста, пополните счёт.",
-            _inline_keyboard([[InlineKeyboardButton(text="🔙 Назад", callback_data="delete_this")]]),
+            _inline_keyboard([[InlineKeyboardButton(text="🔙 Назад", callback_data=Callback.DELETE_THIS)]]),
         )
         return
 
@@ -1077,7 +1075,7 @@ async def on_buy_check(callback: CallbackQuery) -> None:
     await start_order_wizard(callback, game)
 
 
-@router.callback_query(F.data.regexp(r"^geo_"))
+@router.callback_query(F.data.regexp(rf"^{Callback.GEO_PREFIX}"))
 async def on_geo_select(callback: CallbackQuery) -> None:
     await callback.answer()
     user_id = callback.from_user.id
@@ -1093,8 +1091,7 @@ async def on_geo_select(callback: CallbackQuery) -> None:
         await edit_or_reply(callback, "Время ожидания истекло. Начните заказ заново.", WITH_BACK_TO_MENU)
         return
 
-    geo_payload = (callback.data or "").replace("geo_", "")
-    if geo_payload == "custom":
+    if callback.data == Callback.GEO_CUSTOM:
         pending_count = await DB.count_orders_by_status(user_id, "custom_pending")
         if pending_count >= 3:
             await _reply_from_callback(
@@ -1107,6 +1104,7 @@ async def on_geo_select(callback: CallbackQuery) -> None:
         await _reply_from_callback(callback, "💬 <b>Опишите нужное вам GEO (язык, валюта):</b>")
         return
 
+    geo_payload = (callback.data or "").replace(Callback.GEO_PREFIX, "")
     selected_geo = next((geo for geo in GEOS if geo["id"] == geo_payload), None)
     if selected_geo is None:
         return
@@ -1129,7 +1127,7 @@ async def on_geo_select(callback: CallbackQuery) -> None:
     return
 
 
-@router.callback_query(F.data == "skip_starting_balance")
+@router.callback_query(F.data == Callback.SKIP_STARTING_BALANCE)
 async def on_skip_starting_balance(callback: CallbackQuery) -> None:
     await callback.answer()
     user_id = callback.from_user.id
@@ -1155,7 +1153,7 @@ async def on_skip_starting_balance(callback: CallbackQuery) -> None:
     )
 
 
-@router.callback_query(F.data == "gen_preview")
+@router.callback_query(F.data == Callback.GEN_PREVIEW)
 async def on_gen_preview(callback: CallbackQuery) -> None:
     user_id = callback.from_user.id
     session = await get_session(user_id)
@@ -1225,10 +1223,10 @@ async def on_gen_preview(callback: CallbackQuery) -> None:
             _inline_keyboard(
                 [
                     [InlineKeyboardButton(text="👀 Смотреть демо в канале", url=demo_url or "https://t.me/rwbrr")],
-                    [InlineKeyboardButton(text=f"💳 Купить разово ($ {p1})", callback_data=f"pay_single_{order_id}")],
-                    [InlineKeyboardButton(text=f"⭐ Подписка ($ {p2})", callback_data=f"pay_sub_{order_id}")],
-                    [InlineKeyboardButton(text="Оплатить напрямую (BTC/USDT)", callback_data=f"manual_pay_menu_{order_id}")],
-                    [InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu")],
+                    [InlineKeyboardButton(text=f"💳 Купить разово ($ {p1})", callback_data=f"{Callback.PAY_PREFIX}{PaymentType.SINGLE}_{order_id}")],
+                    [InlineKeyboardButton(text=f"⭐ Подписка ($ {p2})", callback_data=f"{Callback.PAY_PREFIX}{PaymentType.SUB}_{order_id}")],
+                    [InlineKeyboardButton(text="Оплатить напрямую (BTC/USDT)", callback_data=f"{Callback.MANUAL_PAY_MENU_PREFIX}{order_id}")],
+                    [InlineKeyboardButton(text="🏠 Главное меню", callback_data=Callback.MAIN_MENU)],
                 ]
             ),
         )
@@ -1311,7 +1309,7 @@ def get_stored_crypto_payment(order: dict[str, Any]) -> dict[str, Any] | None:
 
     payment_type = payment.get("type")
     pay_url = payment.get("payUrl")
-    if payment_type not in {"single", "sub"}:
+    if payment_type not in {PaymentType.SINGLE, PaymentType.SUB}:
         return None
     if invoice_id <= 0 or amount <= 0 or discount < 0:
         return None
@@ -1327,11 +1325,11 @@ def get_stored_crypto_payment(order: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-@router.callback_query(F.data.regexp(r"^payment_cancel_"))
+@router.callback_query(F.data.regexp(rf"^{Callback.PAYMENT_CANCEL_PREFIX}"))
 async def on_payment_cancel(callback: CallbackQuery) -> None:
     await callback.answer()
     user_id = callback.from_user.id
-    order_id = (callback.data or "").replace("payment_cancel_", "")
+    order_id = (callback.data or "").replace(Callback.PAYMENT_CANCEL_PREFIX, "")
     if not order_id:
         await edit_or_reply(callback, "Некорректная ссылка оплаты.", WITH_BACK_TO_MENU)
         return
@@ -1361,10 +1359,10 @@ async def on_payment_cancel(callback: CallbackQuery) -> None:
     )
 
 
-@router.callback_query(F.data.regexp(r"^manual_pay_menu_"))
+@router.callback_query(F.data.regexp(rf"^{Callback.MANUAL_PAY_MENU_PREFIX}"))
 async def on_manual_pay_menu(callback: CallbackQuery) -> None:
     await callback.answer()
-    order_id = (callback.data or "").replace("manual_pay_menu_", "")
+    order_id = (callback.data or "").replace(Callback.MANUAL_PAY_MENU_PREFIX, "")
     if not order_id:
         await edit_or_reply(callback, "Некорректная ссылка оплаты.", WITH_BACK_TO_MENU)
         return
@@ -1376,26 +1374,26 @@ async def on_manual_pay_menu(callback: CallbackQuery) -> None:
         await edit_or_reply(callback, CANCELLED_ORDER_TEXT, build_cancelled_order_keyboard())
         return
 
-    single = await get_discounted_amount(callback.from_user.id, "single", str(order.get("gameType")))
-    sub = await get_discounted_amount(callback.from_user.id, "sub", str(order.get("gameType")))
+    single = await get_discounted_amount(callback.from_user.id, PaymentType.SINGLE, str(order.get("gameType")))
+    sub = await get_discounted_amount(callback.from_user.id, PaymentType.SUB, str(order.get("gameType")))
     await DB.log_action(callback.from_user.id, "manual_pay_menu_open", order_id)
     await edit_or_reply(
         callback,
         "Выберите тип прямой оплаты. После перевода отправьте TX hash или скриншот для ручной проверки.",
         _inline_keyboard(
             [
-                [InlineKeyboardButton(text=f"Разово ${single['amount']}", callback_data=f"manual_pay_single_{order_id}")],
-                [InlineKeyboardButton(text=f"Подписка ${sub['amount']}", callback_data=f"manual_pay_sub_{order_id}")],
-                [InlineKeyboardButton(text="Главное меню", callback_data="main_menu")],
+                [InlineKeyboardButton(text=f"Разово ${single['amount']}", callback_data=f"{Callback.MANUAL_PAY_PREFIX}{PaymentType.SINGLE}_{order_id}")],
+                [InlineKeyboardButton(text=f"Подписка ${sub['amount']}", callback_data=f"{Callback.MANUAL_PAY_PREFIX}{PaymentType.SUB}_{order_id}")],
+                [InlineKeyboardButton(text="Главное меню", callback_data=Callback.MAIN_MENU)],
             ]
         ),
     )
 
 
-@router.callback_query(F.data.regexp(r"^manual_pay_(single|sub)_"))
+@router.callback_query(F.data.regexp(rf"^{Callback.MANUAL_PAY_PREFIX}({PaymentType.SINGLE}|{PaymentType.SUB})_"))
 async def on_manual_pay_type(callback: CallbackQuery) -> None:
     await callback.answer()
-    match = re.match(r"^manual_pay_(single|sub)_(.+)$", callback.data or "")
+    match = re.match(rf"^{Callback.MANUAL_PAY_PREFIX}({PaymentType.SINGLE}|{PaymentType.SUB})_(.+)$", callback.data or "")
     if not match:
         await edit_or_reply(callback, "Некорректная ссылка оплаты.", WITH_BACK_TO_MENU)
         return
@@ -1442,18 +1440,18 @@ async def on_manual_pay_type(callback: CallbackQuery) -> None:
         message,
         _inline_keyboard(
             [
-                [InlineKeyboardButton(text="Я оплатил", callback_data=f"manual_paid_{payment_type}_{order_id}")],
-                [InlineKeyboardButton(text="Назад", callback_data=f"manual_pay_menu_{order_id}")],
-                [InlineKeyboardButton(text="Главное меню", callback_data="main_menu")],
+                [InlineKeyboardButton(text="Я оплатил", callback_data=f"{Callback.MANUAL_PAID_PREFIX}{payment_type}_{order_id}")],
+                [InlineKeyboardButton(text="Назад", callback_data=f"{Callback.MANUAL_PAY_MENU_PREFIX}{order_id}")],
+                [InlineKeyboardButton(text="Главное меню", callback_data=Callback.MAIN_MENU)],
             ]
         ),
     )
 
 
-@router.callback_query(F.data.regexp(r"^manual_paid_(single|sub)_"))
+@router.callback_query(F.data.regexp(rf"^{Callback.MANUAL_PAID_PREFIX}({PaymentType.SINGLE}|{PaymentType.SUB})_"))
 async def on_manual_paid(callback: CallbackQuery) -> None:
     await callback.answer()
-    match = re.match(r"^manual_paid_(single|sub)_(.+)$", callback.data or "")
+    match = re.match(rf"^{Callback.MANUAL_PAID_PREFIX}({PaymentType.SINGLE}|{PaymentType.SUB})_(.+)$", callback.data or "")
     if not match:
         await edit_or_reply(callback, "Некорректная ссылка оплаты.", WITH_BACK_TO_MENU)
         return
@@ -1484,15 +1482,15 @@ async def on_manual_paid(callback: CallbackQuery) -> None:
     await edit_or_reply(
         callback,
         "Отправьте TX hash текстом или скриншот фото/документом.\nЧтобы отменить, отправьте /cancel.",
-        _inline_keyboard([[InlineKeyboardButton(text="Главное меню", callback_data="main_menu")]]),
+        _inline_keyboard([[InlineKeyboardButton(text="Главное меню", callback_data=Callback.MAIN_MENU)]]),
     )
 
 
-@router.callback_query(F.data.regexp(r"^crypto_check_"))
+@router.callback_query(F.data.regexp(rf"^{Callback.CRYPTO_CHECK_PREFIX}"))
 async def on_crypto_check(callback: CallbackQuery) -> None:
     await callback.answer()
     user_id = callback.from_user.id
-    order_id = (callback.data or "").replace("crypto_check_", "")
+    order_id = (callback.data or "").replace(Callback.CRYPTO_CHECK_PREFIX, "")
     if not order_id:
         await edit_or_reply(callback, "Некорректная ссылка проверки оплаты.", WITH_BACK_TO_MENU)
         return
@@ -1578,7 +1576,7 @@ async def on_crypto_check(callback: CallbackQuery) -> None:
         logging.exception("Crypto payment check error")
         await edit_or_reply(callback, "Не удалось проверить оплату. Попробуйте ещё раз.", WITH_BACK_TO_MENU)
 
-@router.callback_query(F.data.regexp(r"^pay_"))
+@router.callback_query(F.data.regexp(rf"^{Callback.PAY_PREFIX}"))
 async def on_pay(callback: CallbackQuery) -> None:
     await callback.answer()
     user_id = callback.from_user.id
@@ -1649,7 +1647,7 @@ async def on_pay(callback: CallbackQuery) -> None:
     if not already_paid:
         pricing = await get_effective_discount_for_game(user_id, str(order.get("gameType")))
         discount = int(pricing["discount"])
-        amount = calc_price(CONFIG.prices.sub if parsed["type"] == "sub" else CONFIG.prices.single, discount)
+        amount = calc_price(CONFIG.prices.sub if parsed["type"] == PaymentType.SUB else CONFIG.prices.single, discount)
 
         if pricing["stats"].wallet_balance < amount:
             await edit_or_reply(
@@ -1697,7 +1695,7 @@ async def on_pay(callback: CallbackQuery) -> None:
     )
 
 
-@router.callback_query(F.data == "profile")
+@router.callback_query(F.data == Callback.PROFILE)
 async def on_profile(callback: CallbackQuery) -> None:
     await callback.answer()
     user_id = callback.from_user.id
@@ -1709,8 +1707,8 @@ async def on_profile(callback: CallbackQuery) -> None:
     profile_path = BOT_ASSETS_DIR / "profile.png"
     keyboard = _inline_keyboard(
         [
-            [InlineKeyboardButton(text=t(lang, "top_up"), callback_data="top_up_balance")],
-            [InlineKeyboardButton(text=t(lang, "menu_home"), callback_data="main_menu")],
+            [InlineKeyboardButton(text=t(lang, "top_up"), callback_data=Callback.TOP_UP_BALANCE)],
+            [InlineKeyboardButton(text=t(lang, "menu_home"), callback_data=Callback.MAIN_MENU)],
         ]
     )
     message = _callback_message(callback)
@@ -1742,7 +1740,7 @@ async def on_profile(callback: CallbackQuery) -> None:
     await _reply_from_callback(callback, msg_text, keyboard)
 
 
-@router.callback_query(F.data == "top_up_balance")
+@router.callback_query(F.data == Callback.TOP_UP_BALANCE)
 async def on_top_up_balance(callback: CallbackQuery) -> None:
     await callback.answer()
     msg = (
@@ -1757,14 +1755,14 @@ async def on_top_up_balance(callback: CallbackQuery) -> None:
         msg,
         _inline_keyboard(
             [
-                [InlineKeyboardButton(text="✅ Я оплатил", callback_data="i_paid")],
-                [InlineKeyboardButton(text="🔙 Назад", callback_data="profile")],
+                [InlineKeyboardButton(text="✅ Я оплатил", callback_data=Callback.I_PAID)],
+                [InlineKeyboardButton(text="🔙 Назад", callback_data=Callback.PROFILE)],
             ]
         ),
     )
 
 
-@router.callback_query(F.data == "i_paid")
+@router.callback_query(F.data == Callback.I_PAID)
 async def on_i_paid(callback: CallbackQuery) -> None:
     await callback.answer()
     user = callback.from_user
@@ -1773,7 +1771,7 @@ async def on_i_paid(callback: CallbackQuery) -> None:
         callback,
         "<b>Заявка отправлена!</b>\n\nАдминистратор скоро проверит платёж и зачислит средства на ваш баланс. "
         "Обычно это занимает от 5 до 30 минут.",
-        _inline_keyboard([[InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu")]]),
+        _inline_keyboard([[InlineKeyboardButton(text="🏠 Главное меню", callback_data=Callback.MAIN_MENU)]]),
     )
 
     safe_first_name = escape(user.first_name or "Без имени")
@@ -1798,8 +1796,8 @@ async def approve_manual_order(bot: Bot, order_id: str) -> dict[str, Any]:
     config = order.get("config", {})
     manual_payment = config.get("manualPayment", {}) if isinstance(config, dict) else {}
     payment_type = manual_payment.get("type")
-    if payment_type not in {"single", "sub"}:
-        payment_type = "single"
+    if payment_type not in {PaymentType.SINGLE, PaymentType.SUB}:
+        payment_type = PaymentType.SINGLE
 
     amount = manual_payment.get("amount", 0)
     discount = manual_payment.get("discount", 0)
@@ -1854,13 +1852,13 @@ async def approve_manual_order(bot: Bot, order_id: str) -> dict[str, Any]:
         logging.exception("Failed to send granted playable")
         return {"ok": False, "message": "Не удалось отправить файл пользователю."}
 
-@router.callback_query(F.data.regexp(r"^admin_manual_(approve|reject)_"))
+@router.callback_query(F.data.regexp(rf"^{Callback.ADMIN_MANUAL_PREFIX}(approve|reject)_"))
 async def on_admin_manual(callback: CallbackQuery) -> None:
     if callback.from_user.id != CONFIG.admin_telegram_id:
         lang = await get_user_lang(callback.from_user.id)
         await callback.answer(localize_text("Недостаточно прав.", lang), show_alert=True)
         return
-    match = re.match(r"^admin_manual_(approve|reject)_(.+)$", callback.data or "")
+    match = re.match(rf"^{Callback.ADMIN_MANUAL_PREFIX}(approve|reject)_(.+)$", callback.data or "")
     if not match:
         lang = await get_user_lang(callback.from_user.id)
         await callback.answer(localize_text("Некорректная команда.", lang), show_alert=True)
@@ -1954,7 +1952,7 @@ async def on_addbalance(message: Message) -> None:
         await message.answer("Ошибка: пользователь не найден или не удалось обновить БД.")
 
 
-@router.callback_query(F.data == "ref_system")
+@router.callback_query(F.data == Callback.REF_SYSTEM)
 async def on_ref_system(callback: CallbackQuery) -> None:
     await callback.answer()
     lang = await get_user_lang(callback.from_user.id)
@@ -2016,7 +2014,7 @@ async def on_any_message(message: Message) -> None:
             {
                 "manualPayment": {
                     "provider": "direct_wallet",
-                    "type": pending.get("paymentType", "single"),
+                    "type": pending.get("paymentType", PaymentType.SINGLE),
                     "amount": pending.get("amount", 0),
                     "state": "pending_admin_review",
                     "proofType": proof_type,
@@ -2053,8 +2051,8 @@ async def on_any_message(message: Message) -> None:
                 admin_message,
                 reply_markup=_inline_keyboard(
                     [
-                        [InlineKeyboardButton(text="✅ Одобрить", callback_data=f"admin_manual_approve_{order_id}")],
-                        [InlineKeyboardButton(text="❌ Отклонить", callback_data=f"admin_manual_reject_{order_id}")],
+                        [InlineKeyboardButton(text="✅ Одобрить", callback_data=f"{Callback.ADMIN_MANUAL_PREFIX}approve_{order_id}")],
+                        [InlineKeyboardButton(text="❌ Отклонить", callback_data=f"{Callback.ADMIN_MANUAL_PREFIX}reject_{order_id}")],
                     ]
                 ),
             )
@@ -2120,8 +2118,8 @@ async def on_any_message(message: Message) -> None:
                     summary or "<b>Проверьте настройки заказа и создайте превью.</b>",
                     reply_markup=_inline_keyboard(
                         [
-                            [InlineKeyboardButton(text="🚀 СОЗДАТЬ ПРЕВЬЮ", callback_data="gen_preview")],
-                            [InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu")],
+                        [InlineKeyboardButton(text="🚀 СОЗДАТЬ ПРЕВЬЮ", callback_data=Callback.GEN_PREVIEW)],
+                        [InlineKeyboardButton(text="🏠 Главное меню", callback_data=Callback.MAIN_MENU)],
                         ]
                     ),
                 )
@@ -2177,7 +2175,7 @@ async def on_any_message(message: Message) -> None:
                 message,
                 "Введите корректное число для стартового баланса, например <code>1000</code>.",
                 reply_markup=_inline_keyboard(
-                    [[InlineKeyboardButton(text="Пропустить (по умолчанию)", callback_data="skip_starting_balance")]]
+                    [[InlineKeyboardButton(text="Пропустить (по умолчанию)", callback_data=Callback.SKIP_STARTING_BALANCE)]]
                 ),
             )
             return
