@@ -520,11 +520,13 @@ export async function cleanupTemp() {
     try {
         await fs.mkdir(TEMP_DIR, { recursive: true });
         const entries = await fs.readdir(TEMP_DIR, { withFileTypes: true });
-        for (const entry of entries) {
-            if (entry.name === path.basename(DEPS_CACHE_ROOT)) continue;
+
+        await Promise.all(entries.map(async (entry) => {
+            if (entry.name === path.basename(DEPS_CACHE_ROOT)) return;
             const targetPath = path.join(TEMP_DIR, entry.name);
             await fs.rm(targetPath, { recursive: true, force: true });
-        }
+        }));
+
         await fs.mkdir(TEMP_DIR, { recursive: true });
     } catch (e) {
         console.error("[Builder] Cleanup error:", e);
