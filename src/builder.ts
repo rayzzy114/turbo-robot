@@ -4,7 +4,7 @@ import path from 'path';
 import { exec } from 'child_process';
 import util from 'util';
 import { fileURLToPath } from 'url';
-import { createHash } from 'crypto';
+import { createHash, randomBytes, randomInt } from 'crypto';
 import { OrderConfig } from './bot_helpers.js';
 
 const execAsync = util.promisify(exec);
@@ -587,7 +587,7 @@ function sha256Hex(value: string): string {
 async function injectRuntimeConfig(htmlPath: string, runtimeConfig: Record<string, unknown>) {
     const html = await fs.readFile(htmlPath, "utf-8");
     const isWatermarked = Boolean(runtimeConfig.isWatermarked);
-    const guardSalt = Math.random().toString(36).slice(2, 14);
+    const guardSalt = randomBytes(6).toString("hex");
     if (isWatermarked) {
         const payload = buildPreviewGuardPayload(runtimeConfig);
         runtimeConfig.__guardSig = sha256Hex(`${payload}|${guardSalt}`);
@@ -630,8 +630,8 @@ async function obfuscateInlineScriptsInHtml(htmlPath: string): Promise<void> {
 async function wrapHtmlWithEncodedBootstrap(htmlPath: string): Promise<void> {
     const html = await fs.readFile(htmlPath, "utf-8");
     const codecs = ["rot13", "shift"] as const;
-    const shiftBy = (Math.floor(Math.random() * 15) + 3);
-    const pick = () => codecs[Math.floor(Math.random() * codecs.length)];
+    const shiftBy = randomInt(3, 18);
+    const pick = () => codecs[randomInt(0, codecs.length)];
     const steps = ["b64", pick(), pick(), pick(), pick()] as const;
 
     const applyEncode = (input: string, step: "b64" | (typeof codecs)[number]): string => {
